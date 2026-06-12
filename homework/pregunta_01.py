@@ -18,3 +18,49 @@ def pregunta_01():
 
 
     """
+    import pandas as pd
+
+    file = pd.read_fwf(
+        "files/input/clusters_report.txt",
+        widths=[9, 16, 16, 80],
+        names=[
+            "Cluster",
+            "Cantidad de palabras clave",
+            "Porcentaje de palabras clave",
+            "Principales palabras clave",
+        ],
+        skiprows=4,
+    )
+
+    data = []
+    cluster = None
+
+    for _, row in file.iterrows():
+        if pd.notna(row["Cluster"]):
+            if cluster:
+                data.append(cluster)
+            cluster = {
+                "Cluster": int(row["Cluster"]),
+                "Cantidad de palabras clave": int(row["Cantidad de palabras clave"]),
+                "Porcentaje de palabras clave": float(
+                    str(row["Porcentaje de palabras clave"]).replace("%", "").replace(",", ".")
+                ),
+                "Principales palabras clave": str(row["Principales palabras clave"]).strip(),
+            }
+        else:
+            cluster["Principales palabras clave"] += " " + str(row["Principales palabras clave"]).strip()
+
+    if cluster:
+        data.append(cluster)
+
+    dataframe = pd.DataFrame(data)
+    dataframe.columns = dataframe.columns.map(lambda x: x.lower().replace(" ", "_"))
+    dataframe["principales_palabras_clave"] = (
+        dataframe["principales_palabras_clave"]
+        .str.replace(r"\s+", " ", regex=True)
+        .str.strip()
+        .str.replace(r"\s*,\s*", ", ", regex=True)
+        .str.replace(r"\.$", "", regex=True)
+    )
+
+    return dataframe
